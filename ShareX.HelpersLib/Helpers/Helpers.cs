@@ -251,7 +251,7 @@ namespace ShareX.HelpersLib
 
         public static char GetRandomChar(string chars)
         {
-            return chars[MathHelpers.CryptoRandom(chars.Length - 1)];
+            return chars[RandomCrypto.Next(chars.Length - 1)];
         }
 
         public static string GetRandomString(string chars, int length)
@@ -289,10 +289,12 @@ namespace ShareX.HelpersLib
         public static string GetRandomLine(string text)
         {
             string[] lines = text.Trim().Lines();
+
             if (lines != null && lines.Length > 0)
             {
-                return lines[MathHelpers.CryptoRandom(0, lines.Length - 1)];
+                return RandomCrypto.Pick(lines);
             }
+
             return null;
         }
 
@@ -789,12 +791,20 @@ namespace ShareX.HelpersLib
             return false;
         }
 
-        public static string GetVariableFolderPath(string path)
+        public static string GetVariableFolderPath(string path, bool supportCustomSpecialFolders = false)
         {
             if (!string.IsNullOrEmpty(path))
             {
                 try
                 {
+                    if (supportCustomSpecialFolders)
+                    {
+                        foreach (KeyValuePair<string, string> specialFolder in HelpersOptions.ShareXSpecialFolders)
+                        {
+                            path = path.Replace(specialFolder.Value, $"%{specialFolder.Key}%", StringComparison.OrdinalIgnoreCase);
+                        }
+                    }
+
                     foreach (Environment.SpecialFolder specialFolder in GetEnums<Environment.SpecialFolder>())
                     {
                         path = path.Replace(Environment.GetFolderPath(specialFolder), $"%{specialFolder}%", StringComparison.OrdinalIgnoreCase);
@@ -809,12 +819,20 @@ namespace ShareX.HelpersLib
             return path;
         }
 
-        public static string ExpandFolderVariables(string path)
+        public static string ExpandFolderVariables(string path, bool supportCustomSpecialFolders = false)
         {
             if (!string.IsNullOrEmpty(path))
             {
                 try
                 {
+                    if (supportCustomSpecialFolders)
+                    {
+                        foreach (KeyValuePair<string, string> specialFolder in HelpersOptions.ShareXSpecialFolders)
+                        {
+                            path = path.Replace($"%{specialFolder.Key}%", specialFolder.Value, StringComparison.OrdinalIgnoreCase);
+                        }
+                    }
+
                     foreach (Environment.SpecialFolder specialFolder in GetEnums<Environment.SpecialFolder>())
                     {
                         path = path.Replace($"%{specialFolder}%", Environment.GetFolderPath(specialFolder), StringComparison.OrdinalIgnoreCase);
@@ -906,7 +924,7 @@ namespace ShareX.HelpersLib
             return -1;
         }
 
-        public static void CreateDirectoryFromDirectoryPath(string directoryPath)
+        public static void CreateDirectory(string directoryPath)
         {
             if (!string.IsNullOrEmpty(directoryPath) && !Directory.Exists(directoryPath))
             {
@@ -928,7 +946,7 @@ namespace ShareX.HelpersLib
             if (!string.IsNullOrEmpty(filePath))
             {
                 string directoryPath = Path.GetDirectoryName(filePath);
-                CreateDirectoryFromDirectoryPath(directoryPath);
+                CreateDirectory(directoryPath);
             }
         }
 
@@ -953,7 +971,7 @@ namespace ShareX.HelpersLib
             {
                 string fileName = Path.GetFileName(filePath);
                 string destinationFilePath = Path.Combine(destinationFolder, fileName);
-                CreateDirectoryFromDirectoryPath(destinationFolder);
+                CreateDirectory(destinationFolder);
                 File.Copy(filePath, destinationFilePath, overwrite);
                 return destinationFilePath;
             }
@@ -967,7 +985,7 @@ namespace ShareX.HelpersLib
             {
                 string fileName = Path.GetFileName(filePath);
                 string destinationFilePath = Path.Combine(destinationFolder, fileName);
-                CreateDirectoryFromDirectoryPath(destinationFolder);
+                CreateDirectory(destinationFolder);
 
                 if (overwrite && File.Exists(destinationFilePath))
                 {
@@ -1013,7 +1031,7 @@ namespace ShareX.HelpersLib
 
                 if (!File.Exists(newFilePath))
                 {
-                    CreateDirectoryFromDirectoryPath(destinationFolder);
+                    CreateDirectory(destinationFolder);
                     File.Copy(filePath, newFilePath, false);
                     return newFilePath;
                 }
@@ -1033,7 +1051,7 @@ namespace ShareX.HelpersLib
 
                 if (!File.Exists(newFilePath))
                 {
-                    CreateDirectoryFromDirectoryPath(destinationFolder);
+                    CreateDirectory(destinationFolder);
                     File.Copy(filePath, newFilePath, false);
                 }
             }
@@ -1044,10 +1062,15 @@ namespace ShareX.HelpersLib
             return Guid.NewGuid().ToString("N");
         }
 
+        public static Point GetPosition(ContentAlignment placement, int offset, Size backgroundSize, Size objectSize)
+        {
+            return GetPosition(placement, new Point(offset, offset), backgroundSize, objectSize);
+        }
+
         public static Point GetPosition(ContentAlignment placement, Point offset, Size backgroundSize, Size objectSize)
         {
-            int midX = (backgroundSize.Width / 2) - (objectSize.Width / 2);
-            int midY = (backgroundSize.Height / 2) - (objectSize.Height / 2);
+            int midX = (int)Math.Round((backgroundSize.Width / 2f) - (objectSize.Width / 2f));
+            int midY = (int)Math.Round((backgroundSize.Height / 2f) - (objectSize.Height / 2f));
             int right = backgroundSize.Width - objectSize.Width;
             int bottom = backgroundSize.Height - objectSize.Height;
 

@@ -31,6 +31,7 @@ using ShareX.UploadersLib.FileUploaders;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -142,7 +143,9 @@ namespace ShareX
 
         public static void LoadApplicationConfig()
         {
-            Settings = ApplicationConfig.Load(ApplicationConfigFilePath, BackupFolder, true, true);
+            Settings = ApplicationConfig.Load(ApplicationConfigFilePath, BackupFolder);
+            Settings.CreateBackup = true;
+            Settings.CreateWeeklyBackup = true;
             Settings.SettingsSaveFailed += Settings_SettingsSaveFailed;
             DefaultTaskSettings = Settings.DefaultTaskSettings;
             ApplicationConfigBackwardCompatibilityTasks();
@@ -176,13 +179,19 @@ namespace ShareX
 
         public static void LoadUploadersConfig()
         {
-            UploadersConfig = UploadersConfig.Load(UploadersConfigFilePath, BackupFolder, true, true);
+            UploadersConfig = UploadersConfig.Load(UploadersConfigFilePath, BackupFolder);
+            UploadersConfig.CreateBackup = true;
+            UploadersConfig.CreateWeeklyBackup = true;
+            UploadersConfig.SupportDPAPIEncryption = true;
             UploadersConfigBackwardCompatibilityTasks();
         }
 
         public static void LoadHotkeysConfig()
         {
-            HotkeysConfig = HotkeysConfig.Load(HotkeysConfigFilePath, BackupFolder, true, true);
+            HotkeysConfig = HotkeysConfig.Load(HotkeysConfigFilePath, BackupFolder);
+            HotkeysConfig.CreateBackup = true;
+            HotkeysConfig.CreateWeeklyBackup = true;
+            HotkeysConfigBackwardCompatibilityTasks();
         }
 
         public static void LoadAllSettings()
@@ -278,6 +287,22 @@ namespace ShareX
             }
         }
 
+        private static void HotkeysConfigBackwardCompatibilityTasks()
+        {
+            if (HotkeysConfig.IsUpgradeFrom("13.1.1"))
+            {
+                foreach (TaskSettings taskSettings in HotkeysConfig.Hotkeys.Select(x => x.TaskSettings))
+                {
+                    if (taskSettings != null && !string.IsNullOrEmpty(taskSettings.AdvancedSettings.CapturePath))
+                    {
+                        taskSettings.OverrideScreenshotsFolder = true;
+                        taskSettings.ScreenshotsFolder = taskSettings.AdvancedSettings.CapturePath;
+                        taskSettings.AdvancedSettings.CapturePath = "";
+                    }
+                }
+            }
+        }
+
         public static void SaveAllSettings()
         {
             if (Settings != null) Settings.Save(ApplicationConfigFilePath);
@@ -327,17 +352,17 @@ namespace ShareX
 
                 if (settings)
                 {
-                    files.Add(ApplicationConfigFilename);
-                    files.Add(HotkeysConfigFilename);
-                    files.Add(UploadersConfigFilename);
+                    files.Add(ApplicationConfigFilePath);
+                    files.Add(HotkeysConfigFilePath);
+                    files.Add(UploadersConfigFilePath);
                 }
 
                 if (history)
                 {
-                    files.Add(Program.HistoryFilename);
+                    files.Add(Program.HistoryFilePath);
                 }
 
-                ZipManager.Compress(archivePath, files, Program.PersonalFolder);
+                ZipManager.Compress(archivePath, files);
                 return true;
             }
             catch (Exception e)

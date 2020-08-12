@@ -24,30 +24,38 @@
 #endregion License Information (GPL v3)
 
 using ShareX.HelpersLib;
+using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Design;
+using System.Drawing.Drawing2D;
 using System.IO;
 
 namespace ShareX.ImageEffectsLib
 {
-    [Description("Image watermark")]
+    [Description("Image")]
     public class DrawImage : ImageEffect
     {
         [DefaultValue(""), Editor(typeof(ImageFileNameEditor), typeof(UITypeEditor))]
         public string ImageLocation { get; set; }
 
-        [DefaultValue(ContentAlignment.BottomRight)]
+        [DefaultValue(ContentAlignment.BottomRight), TypeConverter(typeof(EnumProperNameConverter))]
         public ContentAlignment Placement { get; set; }
 
         [DefaultValue(typeof(Point), "5, 5")]
         public Point Offset { get; set; }
 
-        [DefaultValue(DrawImageSizeMode.DontResize), Description("How the image watermark should be rescaled, if at all.")]
+        [DefaultValue(DrawImageSizeMode.DontResize), Description("How the image watermark should be rescaled, if at all."), TypeConverter(typeof(EnumDescriptionConverter))]
         public DrawImageSizeMode SizeMode { get; set; }
 
         [DefaultValue(typeof(Size), "0, 0")]
         public Size Size { get; set; }
+
+        [DefaultValue(ImageInterpolationMode.HighQualityBicubic), TypeConverter(typeof(EnumProperNameConverter))]
+        public ImageInterpolationMode InterpolationMode { get; set; }
+
+        [DefaultValue(CompositingMode.SourceOver), TypeConverter(typeof(EnumProperNameConverter))]
+        public CompositingMode CompositingMode { get; set; }
 
         [DefaultValue(true), Description("If image watermark size bigger than source image then don't draw it.")]
         public bool AutoHide { get; set; }
@@ -57,60 +65,64 @@ namespace ShareX.ImageEffectsLib
             this.ApplyDefaultPropertyValues();
         }
 
-        public override Image Apply(Image img)
+        public override Bitmap Apply(Bitmap bmp)
         {
-            if (!string.IsNullOrEmpty(ImageLocation) && File.Exists(ImageLocation))
+            if (SizeMode != DrawImageSizeMode.DontResize && Size.Width <= 0 && Size.Height <= 0)
             {
-                using (Image img2 = ImageHelpers.LoadImage(ImageLocation))
+                return bmp;
+            }
+
+            string imageFilePath = Helpers.ExpandFolderVariables(ImageLocation, true);
+
+            if (!string.IsNullOrEmpty(imageFilePath) && File.Exists(imageFilePath))
+            {
+                using (Bitmap bmpWatermark = ImageHelpers.LoadImage(imageFilePath))
                 {
-                    if (img2 != null)
+                    if (bmpWatermark != null)
                     {
-                        // Calculate size first
-                        Size imageSize = img2.Size;
+                        Size imageSize;
+
                         if (SizeMode == DrawImageSizeMode.AbsoluteSize)
                         {
-                            // Use Size property
-                            imageSize = Size;
+                            imageSize = ImageHelpers.ApplyAspectRatio(Size, bmpWatermark);
                         }
                         else if (SizeMode == DrawImageSizeMode.PercentageOfWatermark)
                         {
-                            // Relative size (percentage of watermark)
-                            imageSize = new Size((int)(img2.Width * (Size.Width / 100.0)), (int)(img2.Height * (Size.Height / 100.0)));
+                            int width = (int)Math.Round(Size.Width / 100f * bmpWatermark.Width);
+                            int height = (int)Math.Round(Size.Height / 100f * bmpWatermark.Height);
+                            imageSize = ImageHelpers.ApplyAspectRatio(width, height, bmpWatermark);
                         }
                         else if (SizeMode == DrawImageSizeMode.PercentageOfCanvas)
                         {
-                            // Relative size (percentage of image)
-                            imageSize = new Size((int)(img.Width * (Size.Width / 100.0)), (int)(img.Height * (Size.Height / 100.0)));
+                            int width = (int)Math.Round(Size.Width / 100f * bmp.Width);
+                            int height = (int)Math.Round(Size.Height / 100f * bmp.Height);
+                            imageSize = ImageHelpers.ApplyAspectRatio(width, height, bmpWatermark);
+                        }
+                        else
+                        {
+                            imageSize = bmpWatermark.Size;
                         }
 
-                        // Place the image
-                        Point imagePosition = Helpers.GetPosition(Placement, Offset, img.Size, imageSize);
-
+                        Point imagePosition = Helpers.GetPosition(Placement, Offset, bmp.Size, imageSize);
                         Rectangle imageRectangle = new Rectangle(imagePosition, imageSize);
 
-                        if (AutoHide && !new Rectangle(0, 0, img.Width, img.Height).Contains(imageRectangle))
+                        if (AutoHide && !new Rectangle(0, 0, bmp.Width, bmp.Height).Contains(imageRectangle))
                         {
-                            return img;
+                            return bmp;
                         }
 
-                        using (Graphics g = Graphics.FromImage(img))
+                        using (Graphics g = Graphics.FromImage(bmp))
                         {
-                            g.SetHighQuality();
-                            g.DrawImage(img2, imageRectangle);
+                            g.InterpolationMode = ImageHelpers.GetInterpolationMode(InterpolationMode);
+                            g.PixelOffsetMode = PixelOffsetMode.Half;
+                            g.CompositingMode = CompositingMode;
+                            g.DrawImage(bmpWatermark, imageRectangle);
                         }
                     }
                 }
             }
 
-            return img;
-        }
-
-        public enum DrawImageSizeMode
-        {
-            DontResize,
-            AbsoluteSize,
-            PercentageOfWatermark,
-            PercentageOfCanvas
+            return bmp;
         }
     }
 }

@@ -61,6 +61,8 @@ namespace ShareX
 #else
             if (!Program.PortableApps)
             {
+                uclUpdate.UpdateLoadingImage();
+
                 UpdateChecker updateChecker = Program.UpdateManager.CreateUpdateChecker();
                 uclUpdate.CheckUpdate(updateChecker);
             }
@@ -100,6 +102,8 @@ https://github.com/ShareX/ShareX/graphs/contributors
 {Resources.AboutForm_AboutForm_Language_uk}: https://github.com/6c6c6
 {Resources.AboutForm_AboutForm_Language_id_ID}: https://github.com/Nicedward
 {Resources.AboutForm_AboutForm_Language_es_MX}: https://github.com/absay
+{Resources.AboutForm_AboutForm_Language_fa_IR}: https://github.com/pourmand1376
+{Resources.AboutForm_AboutForm_Language_pt_PT}: https://github.com/FarewellAngelina
 
 {Resources.AboutForm_AboutForm_External_libraries}:
 
