@@ -612,7 +612,7 @@ namespace ShareX
 
             if (Info.TaskSettings.AfterCaptureJob.HasFlag(AfterCaptureTasks.CopyImageToClipboard))
             {
-                ClipboardHelpers.CopyImage(Image);
+                ClipboardHelpers.CopyImage(Image, Info.FileName);
                 DebugHelper.WriteLine("Image copied to clipboard.");
             }
 
@@ -726,10 +726,15 @@ namespace ShareX
                             Data.Dispose();
                         }
 
+                        string fileName = Info.FileName;
+
                         foreach (ExternalProgram fileAction in actions)
                         {
                             Info.FilePath = fileAction.Run(Info.FilePath);
                         }
+
+                        string extension = Helpers.GetFilenameExtension(Info.FilePath);
+                        Info.FileName = Helpers.ChangeFilenameExtension(fileName, extension);
 
                         LoadFileStream();
                     }

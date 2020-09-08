@@ -52,7 +52,6 @@ namespace ShareX.HelpersLib
                 catch
                 {
                 }
-
             }
 
             return value;
@@ -71,6 +70,7 @@ namespace ShareX.HelpersLib
                 }
                 catch
                 {
+                    text = null;
                 }
             }
 

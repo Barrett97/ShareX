@@ -40,14 +40,11 @@ namespace ShareX.ImageEffectsLib
         {
             if (!string.IsNullOrEmpty(outputFilePath))
             {
-                string outputFolder = Path.GetDirectoryName(outputFilePath);
-                Helpers.CreateDirectory(outputFolder);
+                List<ZipEntryInfo> entries = new List<ZipEntryInfo>();
 
-                string configFilePath = Path.Combine(outputFolder, ConfigFileName);
-                File.WriteAllText(configFilePath, configJson, Encoding.UTF8);
-
-                Dictionary<string, string> files = new Dictionary<string, string>();
-                files.Add(configFilePath, ConfigFileName);
+                byte[] bytes = Encoding.UTF8.GetBytes(configJson);
+                MemoryStream ms = new MemoryStream(bytes);
+                entries.Add(new ZipEntryInfo(ms, ConfigFileName));
 
                 if (!string.IsNullOrEmpty(assetsFolderPath) && Directory.Exists(assetsFolderPath))
                 {
@@ -57,18 +54,11 @@ namespace ShareX.ImageEffectsLib
                     foreach (string assetPath in Directory.EnumerateFiles(assetsFolderPath, "*.*", SearchOption.AllDirectories).Where(x => Helpers.IsImageFile(x)))
                     {
                         string entryName = assetPath.Substring(entryNamePosition);
-                        files.Add(assetPath, entryName);
+                        entries.Add(new ZipEntryInfo(assetPath, entryName));
                     }
                 }
 
-                try
-                {
-                    ZipManager.Compress(outputFilePath, files);
-                }
-                finally
-                {
-                    File.Delete(configFilePath);
-                }
+                ZipManager.Compress(outputFilePath, entries);
 
                 return outputFilePath;
             }
@@ -99,7 +89,7 @@ namespace ShareX.ImageEffectsLib
                     }
 
                     return false;
-                }, 20_000_000);
+                }, 100_000_000);
             }
 
             return configJson;

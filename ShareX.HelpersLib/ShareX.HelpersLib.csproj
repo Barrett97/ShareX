@@ -149,6 +149,7 @@
     <Compile Include="Forms\DebugForm.Designer.cs">
       <DependentUpon>DebugForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Helpers\ClipboardHelpersEx.cs" />
     <Compile Include="Helpers\JsonHelpers.cs" />
     <Compile Include="ImageFilesCache.cs" />
     <Compile Include="MaxLengthStream.cs" />
@@ -379,6 +380,7 @@
     <Compile Include="UnsafeBitmap.cs" />
     <Compile Include="UpdateChecker\AppVeyor.cs" />
     <Compile Include="UpdateChecker\AppVeyorUpdateChecker.cs" />
+    <Compile Include="UpdateChecker\FFmpegUpdateChecker.cs" />
     <Compile Include="UpdateChecker\GitHubUpdateChecker.cs" />
     <Compile Include="UpdateChecker\UpdateChecker.cs" />
     <Compile Include="UpdateChecker\DownloaderForm.cs">
@@ -482,7 +484,8 @@
     <Compile Include="Settings\WritablePropertiesOnlyResolver.cs" />
     <Compile Include="XmlColor.cs" />
     <Compile Include="XmlFont.cs" />
-    <Compile Include="ZipManager.cs" />
+    <Compile Include="Zip\ZipEntryInfo.cs" />
+    <Compile Include="Zip\ZipManager.cs" />
     <EmbeddedResource Include="Controls\ExportImportControl.pt-PT.resx">
       <DependentUpon>ExportImportControl.cs</DependentUpon>
     </EmbeddedResource>
